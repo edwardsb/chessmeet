@@ -1,0 +1,27 @@
+name = "chessmeet-backend"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Durable Objects
+[durable_objects]
+bindings = [
+  { name = "GAMES", class_name = "GameRoom" },
+  { name = "QUEUE", class_name = "MatchingQueue" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["GameRoom", "MatchingQueue"]
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "chessmeet-db"
+database_id = "choose-id-later" 
+
+[observability]
+enabled = true
+
+[vars]
+CALLS_APP_ID = "6eec6686-fd22-4f1d-9acf-6f89e8313974"
+CALLS_APP_SECRET = "26ojCSf0uzsNd1D9A9GA5aUf5yFXRWsigZRPqUdq"
