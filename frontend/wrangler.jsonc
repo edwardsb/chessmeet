@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "chessmeet-frontend",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Static assets binding (required)
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets"
+  },
+
+  // Environment variables
+  "vars": {
+    "NEXT_PUBLIC_BACKEND_URL": "https://chessmeet-backend.benjamin-edwards.workers.dev"
+  },
+
+  // Observability for monitoring and logs
+  "observability": {
+    "enabled": true
+  }
+}

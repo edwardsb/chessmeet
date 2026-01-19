@@ -1,0 +1,27 @@
+@import 'tailwindcss';
+
+@plugin 'tailwind-scrollbar';
+
+:root {
+  --background: #f8f9fa; /* Off-white background */
+  --foreground: #2d3748; /* Dark grey text */
+  --accent: #769656;     /* Chess Green */
+  --board-light: #eeeed2;
+  --board-dark: #769656;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1a202c; /* Dark Navy/Grey */
+    --foreground: #edf2f7; /* Light text */
+    --accent: #81b64c;     /* Lighter Green for contrast */
+    --board-light: #eeeed2;
+    --board-dark: #769656;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}

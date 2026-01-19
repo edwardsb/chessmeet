@@ -19,6 +19,7 @@ backend/.next/
 backend/out/
 frontend/.next/
 frontend/out/
+frontend/.open-next/
 
 # production
 backend/build
