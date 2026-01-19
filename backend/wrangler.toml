@@ -11,17 +11,17 @@ bindings = [
 
 [[migrations]]
 tag = "v1"
-new_classes = ["GameRoom", "MatchingQueue"]
+new_sqlite_classes = ["GameRoom", "MatchingQueue"]
 
 # D1 Database
 [[d1_databases]]
 binding = "DB"
 database_name = "chessmeet-db"
-database_id = "choose-id-later" 
+database_id = "3934bff9-5bbf-4319-9cee-0aecf518ceeb" 
 
 [observability]
 enabled = true
 
-[vars]
-CALLS_APP_ID = "6eec6686-fd22-4f1d-9acf-6f89e8313974"
-CALLS_APP_SECRET = "26ojCSf0uzsNd1D9A9GA5aUf5yFXRWsigZRPqUdq"
+# Secrets are stored via `wrangler secret put`:
+# - CALLS_APP_ID
+# - CALLS_APP_SECRET

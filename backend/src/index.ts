@@ -26,23 +26,38 @@ export default {
       });
     }
 
+    // Helper to add CORS headers to response
+    const addCorsHeaders = (response: Response): Response => {
+      const newHeaders = new Headers(response.headers);
+      newHeaders.set("Access-Control-Allow-Origin", "*");
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders,
+      });
+    };
+
     if (url.pathname === "/api/queue/join") {
       const id = env.QUEUE.idFromName("GLOBAL_QUEUE");
       const stub = env.QUEUE.get(id);
-      return stub.fetch(request);
+      const response = await stub.fetch(request);
+      return addCorsHeaders(response);
     }
 
     if (url.pathname.startsWith("/api/game/")) {
       const pathParts = url.pathname.split("/");
       const gameId = pathParts[3];
-      if (!gameId) return new Response("Missing Game ID", { status: 400 });
+      if (!gameId) return new Response("Missing Game ID", { status: 400, headers: { "Access-Control-Allow-Origin": "*" } });
 
       const id = env.GAMES.idFromName(gameId);
       const stub = env.GAMES.get(id);
-      return stub.fetch(request);
+      const response = await stub.fetch(request);
+      // Don't add CORS to WebSocket upgrade responses
+      if (response.status === 101) return response;
+      return addCorsHeaders(response);
     }
 
-    return new Response("ChessMeet API Ready", { status: 200 });
+    return new Response("ChessMeet API Ready", { status: 200, headers: { "Access-Control-Allow-Origin": "*" } });
   },
 };
 
@@ -60,17 +75,6 @@ export class GameRoom extends DurableObject {
     // REAL VIDEO CALL SIGNALING
     if (url.pathname.endsWith("/call") && request.method === "POST") {
       try {
-        // DIAGNOSTIC: Verify Token
-        const verifyRes = await fetch("https://api.cloudflare.com/client/v4/user/tokens/verify", {
-          headers: { "Authorization": `Bearer ${this.env.CALLS_APP_SECRET}` }
-        });
-        const verifyData = await verifyRes.json() as any;
-        console.log("Token Verification:", JSON.stringify(verifyData));
-
-        if (!verifyData.result || verifyData.result.status !== "active") {
-           throw new Error(`Token invalid: ${JSON.stringify(verifyData)}`);
-        }
-
         let meetingId = await this.ctx.storage.get<string>("meetingId");
 
         // 1. Create Meeting if it doesn't exist
@@ -83,7 +87,10 @@ export class GameRoom extends DurableObject {
                 "Authorization": `Bearer ${this.env.CALLS_APP_SECRET}`,
                 "Content-Type": "application/json"
               },
-              body: JSON.stringify({ title: `Chess Game ${this.ctx.id.toString()}` })
+              body: JSON.stringify({ 
+                title: `Chess Game ${this.ctx.id.toString()}`,
+                waiting_room_enabled: false  // Disable waiting room so participants can join directly
+              })
             }
           );
 
@@ -98,7 +105,7 @@ export class GameRoom extends DurableObject {
           await this.ctx.storage.put("meetingId", meetingId);
         }
 
-        // 2. Add Participant to get token
+        // 2. Add Participant to get token using skip_waiting preset
         const addParticipantRes = await fetch(
           `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/realtime/kit/${this.env.CALLS_APP_ID}/meetings/${meetingId}/participants`,
           {
@@ -109,7 +116,7 @@ export class GameRoom extends DurableObject {
             },
             body: JSON.stringify({
               name: "Player",
-              preset_name: "group_call_participant",
+              preset_name: "skip_waiting",
               client_specific_id: crypto.randomUUID()
             })
           }
@@ -123,9 +130,11 @@ export class GameRoom extends DurableObject {
            throw new Error(`Failed to add participant: ${errorMsg}`);
         }
 
+        console.log(`Returning token for meetingId: ${meetingId}`);
         return new Response(JSON.stringify({
           authToken: participantData.data.token, // CHANGED: .authToken -> .token
-          appId: this.env.CALLS_APP_ID
+          appId: this.env.CALLS_APP_ID,
+          meetingId: meetingId // Include for debugging
         }), {
           headers: { 
             "Content-Type": "application/json",
